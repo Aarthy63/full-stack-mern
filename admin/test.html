@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #000;
+            color: white;
+            margin: 0;
+            padding: 20px;
+        }
+        .test-section {
+            background: #1f2937;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #374151;
+        }
+        .success { color: #10b981; }
+        .error { color: #ef4444; }
+        .info { color: #3b82f6; }
+    </style>
+</head>
+<body>
+    <h1>Admin Panel Test</h1>
+    
+    <div class="test-section">
+        <h2>Environment Check</h2>
+        <p>Backend URL: <span id="backendUrl" class="info">Checking...</span></p>
+        <p>Token Status: <span id="tokenStatus" class="info">Checking...</span></p>
+    </div>
+    
+    <div class="test-section">
+        <h2>Component Test</h2>
+        <div id="navbarTest">Navbar: <span class="info">Loading...</span></div>
+        <div id="sidebarTest">Sidebar: <span class="info">Loading...</span></div>
+    </div>
+    
+    <script>
+        // Test environment variables
+        console.log('Testing admin panel environment...');
+        
+        // Check if we're in a module environment
+        if (typeof import !== 'undefined') {
+            console.log('Module environment detected');
+        } else {
+            console.log('No module environment');
+        }
+        
+        // Check localStorage
+        const token = localStorage.getItem('token');
+        document.getElementById('tokenStatus').textContent = token ? 'Token exists' : 'No token';
+        document.getElementById('tokenStatus').className = token ? 'success' : 'error';
+        
+        // Check backend URL (this would normally come from environment)
+        const backendUrl = 'http://localhost:4000';
+        document.getElementById('backendUrl').textContent = backendUrl;
+        
+        console.log('Test completed');
+    </script>
+</body>
+</html>
