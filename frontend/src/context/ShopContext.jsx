@@ -178,6 +178,20 @@ const ShopContextProvider = (props) => {
         navigate('/place-order');
     }
 
+    // Clear cart after successful order placement
+    const clearCart = async () => {
+        try {
+            // Try to clear backend cart first
+            await cartAPI.clearCart();
+        } catch (error) {
+            console.log('Backend cart clear failed, clearing local cart only:', error);
+        }
+        
+        // Clear local cart state
+        setCartItems({});
+        toast.success('Cart cleared after successful order!');
+    }
+
     const contextValue = {
         products,
         currency,
@@ -194,6 +208,7 @@ const ShopContextProvider = (props) => {
         getCartCount,
         getCartAmount,
         proceedToCheckout,
+        clearCart,
         isLoading,
         error,
         refreshProducts

@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react'
+import React, { useContext, useState, useEffect } from 'react'
 import Title from '../components/Title'
 import CartTotal from '../components/CartTotal'
 import { assets } from '../assets/assets'
@@ -11,7 +11,7 @@ import axios from 'axios'
 const PlaceOrder = () => {
     const { isDark } = useTheme();
     const { user, token } = useAuth();
-    const { cartItems, products, currency, delivery_fee, getCartAmount, navigate } = useContext(ShopContext);
+    const { cartItems, products, currency, delivery_fee, getCartAmount, navigate, clearCart } = useContext(ShopContext);
     const [method, setMethod] = useState('cod');
     const [isSubmitting, setIsSubmitting] = useState(false);
     
@@ -27,6 +27,20 @@ const PlaceOrder = () => {
         country: '',
         phone: ''
     });
+
+    // Load Razorpay script
+    useEffect(() => {
+        if (method === 'razorpay') {
+            const script = document.createElement('script');
+            script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+            script.async = true;
+            document.body.appendChild(script);
+            
+            return () => {
+                document.body.removeChild(script);
+            };
+        }
+    }, [method]);
 
     // Handle form input changes
     const handleInputChange = (e) => {
@@ -80,6 +94,63 @@ const PlaceOrder = () => {
         return items;
     };
 
+    // Handle Razorpay payment
+    const handleRazorpayPayment = async (orderData) => {
+        try {
+            const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000'}/api/order/razorpay`, orderData, {
+                headers: { token }
+            });
+
+            if (response.data.success) {
+                const options = {
+                    key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+                    amount: orderData.amount * 100,
+                    currency: 'INR',
+                    name: 'Fashion Store',
+                    description: 'Order Payment',
+                    order_id: response.data.order.id,
+                    handler: async function (response) {
+                        try {
+                            const verifyResponse = await axios.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000'}/api/order/verify-razorpay`, {
+                                userId: user._id,
+                                razorpay_order_id: response.razorpay_order_id
+                            }, {
+                                headers: { token }
+                            });
+
+                            if (verifyResponse.data.success) {
+                                toast.success('Payment successful! Order placed.');
+                                clearCart(); // Clear the cart
+                                navigate('/orders');
+                            } else {
+                                toast.error('Payment verification failed');
+                            }
+                        } catch (error) {
+                            console.error('Payment verification error:', error);
+                            toast.error('Payment verification failed');
+                        }
+                    },
+                    prefill: {
+                        name: `${formData.firstName} ${formData.lastName}`,
+                        email: formData.email,
+                        contact: formData.phone
+                    },
+                    theme: {
+                        color: '#000000'
+                    }
+                };
+
+                const rzp = new window.Razorpay(options);
+                rzp.open();
+            } else {
+                toast.error(response.data.message || 'Failed to create Razorpay order');
+            }
+        } catch (error) {
+            console.error('Razorpay order creation error:', error);
+            toast.error('Failed to create payment order');
+        }
+    };
+
     // Place order
     const handlePlaceOrder = async () => {
         if (!validateForm()) return;
@@ -123,28 +194,25 @@ const PlaceOrder = () => {
                 response = await axios.post(`${backendUrl}/api/order/place`, orderData, {
                     headers: { token }
                 });
+                
+                if (response.data.success) {
+                    toast.success('Order placed successfully! You will receive a confirmation email shortly.');
+                    clearCart(); // Clear the cart for COD
+                    navigate('/orders');
+                }
             } else if (method === 'stripe') {
                 response = await axios.post(`${backendUrl}/api/order/stripe`, orderData, {
                     headers: { token }
                 });
+                
+                if (response.data.success) {
+                    window.location.href = response.data.session_url;
+                }
             } else if (method === 'razorpay') {
-                response = await axios.post(`${backendUrl}/api/order/razorpay`, orderData, {
-                    headers: { token }
-                });
+                await handleRazorpayPayment(orderData);
             }
 
-            if (response.data.success) {
-                if (method === 'cod') {
-                    toast.success('Order placed successfully! You will receive a confirmation email shortly.');
-                    navigate('/orders');
-                } else if (method === 'stripe') {
-                    window.location.href = response.data.session_url;
-                } else if (method === 'razorpay') {
-                    // Handle Razorpay payment
-                    toast.success('Redirecting to payment gateway...');
-                    // You would implement Razorpay payment flow here
-                }
-            } else {
+            if (response && !response.data.success) {
                 toast.error(response.data.message || 'Failed to place order');
             }
         } catch (error) {

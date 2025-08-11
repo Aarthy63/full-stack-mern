@@ -108,19 +108,28 @@ const List = ({ token }) => {
 
   const updateProduct = async () => {
     try {
+      // Client-side validation
+      if (!editItem.name || !editItem.name.trim()) {
+        toast.error('Product name is required');
+        return;
+      }
+      
+      if (!editItem.category || !editItem.category.trim()) {
+        toast.error('Category is required');
+        return;
+      }
+      
+      if (!editItem.price || isNaN(Number(editItem.price)) || Number(editItem.price) <= 0) {
+        toast.error('Valid price is required');
+        return;
+      }
+      
+      if (!editItem.subCategory || !editItem.subCategory.trim()) {
+        toast.error('Sub-category is required');
+        return;
+      }
+      
       setIsLoading(true)
-      
-      // Validate required fields
-      if (!editItem.name || !editItem.category || !editItem.price || !editItem.subCategory) {
-        toast.error('Please fill in all required fields: name, category, price, and subcategory')
-        return
-      }
-      
-      // Validate price
-      if (isNaN(editItem.price) || editItem.price <= 0) {
-        toast.error('Price must be a valid positive number')
-        return
-      }
       
       console.log('=== UPDATE PRODUCT DEBUG ===');
       console.log('Product ID:', editItem._id);
@@ -135,6 +144,8 @@ const List = ({ token }) => {
       console.log('Backend URL:', backendUrl);
       console.log('Full URL:', backendUrl + '/api/product/update/' + editItem._id);
       console.log('Token:', token ? 'Token exists' : 'No token');
+      console.log('Token length:', token ? token.length : 0);
+      console.log('Token preview:', token ? token.substring(0, 20) + '...' : 'No token');
       
       const updatePayload = {
         name: editItem.name.trim(),
@@ -143,6 +154,18 @@ const List = ({ token }) => {
         description: editItem.description ? editItem.description.trim() : '',
         subCategory: editItem.subCategory.trim(),
         bestseller: editItem.bestseller
+      }
+      
+      console.log('Update payload:', updatePayload);
+      
+      // Test admin authentication first
+      try {
+        const authTestResponse = await axios.get(backendUrl + '/test-admin', {
+          headers: { token }
+        });
+        console.log('Admin auth test response:', authTestResponse.data);
+      } catch (authError) {
+        console.error('Admin auth test failed:', authError.response?.data || authError.message);
       }
       
       const response = await axios.post(
@@ -159,24 +182,28 @@ const List = ({ token }) => {
       console.log('Response:', response);
 
       if (response.data.success) {
-        toast.success('Product updated successfully!')
+        toast.success(response.data.message || 'Product updated successfully!')
         setEditItem(null)
         await fetchList()
       } else {
         toast.error(response.data.message || 'Failed to update product')
       }
     } catch (error) {
-      console.log('Update product error:', error)
+      console.error('Update product error:', error);
       console.log('Error response:', error.response);
       console.log('Error request:', error.request);
+      console.log('Error config:', error.config);
       
       if (error.response) {
         const errorMessage = error.response.data?.message || 'Failed to update product'
         toast.error(errorMessage)
         console.error('Server error:', errorMessage)
+        console.error('Response status:', error.response.status)
+        console.error('Response data:', error.response.data)
       } else if (error.request) {
         toast.error('Network error. Please check your connection.')
         console.error('Network error - no response received')
+        console.error('Request details:', error.request)
       } else {
         toast.error(error.message || 'Failed to update product')
         console.error('Request setup error:', error.message)

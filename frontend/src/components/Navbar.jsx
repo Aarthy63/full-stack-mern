@@ -6,10 +6,12 @@ import { ShopContext } from '../context/ShopContext'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import ThemeToggle from './ThemeToggle'
+import HuggingFaceAI from './HuggingFaceAI'
 
 const Navbar = () => {
     const [visible, setVisible] = useState(false)
     const [showUserMenu, setShowUserMenu] = useState(false)
+    const [showAI, setShowAI] = useState(false)
 
     const { setShowSearch, navigate, getCartCount } = useContext(ShopContext);
     const { user, isAuthenticated, logout } = useAuth();
@@ -84,6 +86,19 @@ const Navbar = () => {
                     className='w-5 cursor-pointer transition-transform duration-200 hover:scale-110' 
                     src={assets.search_icon} 
                     alt="Search" 
+                    style={isDark ? { 
+                        filter: 'brightness(0) invert(1)',
+                        WebkitFilter: 'brightness(0) invert(1)',
+                        MozFilter: 'brightness(0) invert(1)'
+                    } : {}}
+                />
+                
+                {/* AI Assistant Icon */}
+                <img 
+                    onClick={() => setShowAI(true)} 
+                    className='w-5 cursor-pointer transition-transform duration-200 hover:scale-110' 
+                    src={assets.huggingface_icon} 
+                    alt="AI Assistant" 
                     style={isDark ? { 
                         filter: 'brightness(0) invert(1)',
                         WebkitFilter: 'brightness(0) invert(1)',
@@ -202,11 +217,15 @@ const Navbar = () => {
                     <NavLink onClick={() => setVisible(false)} to='/collection' className='py-2 pl-6 border'>COLLECTION</NavLink>
                     <NavLink onClick={() => setVisible(false)} to='/about' className='py-2 pl-6 border'>ABOUT</NavLink>
                     <NavLink onClick={() => setVisible(false)} to='/contact' className='py-2 pl-6 border'>CONTACT</NavLink>
+                    <button onClick={() => { setVisible(false); setShowAI(true); }} className='py-2 pl-6 border text-left w-full'>AI ASSISTANT</button>
                     {!isAuthenticated && (
                         <NavLink onClick={() => setVisible(false)} to='/login' className='py-2 pl-6 border'>LOGIN</NavLink>
                     )}
                 </div>
             </div>
+            
+            {/* AI Assistant Modal */}
+            <HuggingFaceAI isOpen={showAI} onClose={() => setShowAI(false)} />
         </div>
     )
 }

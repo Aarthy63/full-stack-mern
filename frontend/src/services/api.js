@@ -161,6 +161,85 @@ export const cartAPI = {
       console.error('Error removing from cart:', error);
       throw error;
     }
+  },
+
+  // Clear entire cart
+  clearCart: async () => {
+    try {
+      const response = await api.post('/api/cart/clear', {
+        userId: localStorage.getItem('userId') || 'temp'
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error clearing cart:', error);
+      throw error;
+    }
+  }
+};
+
+// Hugging Face AI API calls
+export const huggingFaceAPI = {
+  // Chat with AI model
+  chatWithAI: async (message) => {
+    try {
+      // This is a placeholder for actual Hugging Face API integration
+      // You would need to:
+      // 1. Get a Hugging Face API token
+      // 2. Use the appropriate model endpoint
+      // 3. Handle the API response properly
+      
+      // Example implementation:
+      // const response = await fetch('https://api-inference.huggingface.co/models/your-model', {
+      //   method: 'POST',
+      //   headers: {
+      //     'Authorization': `Bearer ${import.meta.env.VITE_HUGGINGFACE_API_KEY}`,
+      //     'Content-Type': 'application/json',
+      //   },
+      //   body: JSON.stringify({ inputs: message }),
+      // });
+      // return await response.json();
+      
+      // For now, return a mock response
+      return {
+        success: true,
+        response: `AI Assistant: I can help you with fashion advice, product recommendations, and shopping assistance. For "${message}", I recommend checking our latest collection and using our size guide for the best fit.`
+      };
+    } catch (error) {
+      console.error('Error chatting with AI:', error);
+      throw error;
+    }
+  },
+
+  // Get product recommendations
+  getProductRecommendations: async (userPreferences) => {
+    try {
+      // Mock implementation for product recommendations
+      return {
+        success: true,
+        recommendations: [
+          "Based on your style preferences, you might like our casual collection",
+          "For your size, I recommend checking our size guide",
+          "Consider our trending items for this season"
+        ]
+      };
+    } catch (error) {
+      console.error('Error getting recommendations:', error);
+      throw error;
+    }
+  },
+
+  // Style analysis
+  analyzeStyle: async (styleDescription) => {
+    try {
+      // Mock implementation for style analysis
+      return {
+        success: true,
+        analysis: `Based on your description: "${styleDescription}", I can suggest several styling options and product combinations that would work well together.`
+      };
+    } catch (error) {
+      console.error('Error analyzing style:', error);
+      throw error;
+    }
   }
 };
 

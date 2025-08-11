@@ -22,49 +22,98 @@ const Add = ({token}) => {
 
   const onSubmitHandler = async (e) => {
     e.preventDefault();
+    
+    // Client-side validation
+    if (!name.trim()) {
+      toast.error('Product name is required');
+      return;
+    }
+    
+    if (!price || isNaN(Number(price)) || Number(price) <= 0) {
+      toast.error('Valid price is required');
+      return;
+    }
+    
+    if (!category) {
+      toast.error('Category is required');
+      return;
+    }
+    
+    if (!subCategory) {
+      toast.error('Sub-category is required');
+      return;
+    }
+    
+    if (sizes.length === 0) {
+      toast.error('At least one size must be selected');
+      return;
+    }
+    
+    if (!image1 && !image2 && !image3 && !image4) {
+      toast.error('At least one product image is required');
+      return;
+    }
+    
     setIsSubmitting(true)
 
     try {
       const formData = new FormData()
 
-      formData.append("name",name)
-      formData.append("description",description)
-      formData.append("price",price)
-      formData.append("category",category)
-      formData.append("subCategory",subCategory)
-      formData.append("bestseller",bestseller)
-      formData.append("sizes",JSON.stringify(sizes))
+      formData.append("name", name.trim())
+      formData.append("description", description.trim())
+      formData.append("price", price)
+      formData.append("category", category)
+      formData.append("subCategory", subCategory)
+      formData.append("bestseller", bestseller.toString())
+      formData.append("sizes", JSON.stringify(sizes))
 
-      image1 && formData.append("image1",image1)
-      image2 && formData.append("image2",image2)
-      image3 && formData.append("image3",image3)
-      image4 && formData.append("image4",image4)
+      if (image1) formData.append("image1", image1)
+      if (image2) formData.append("image2", image2)
+      if (image3) formData.append("image3", image3)
+      if (image4) formData.append("image4", image4)
 
-      const response = await axios.post(backendUrl + "/api/product/add",formData,{headers:{token}})
+      console.log('Submitting form data:', {
+        name: name.trim(),
+        description: description.trim(),
+        price,
+        category,
+        subCategory,
+        bestseller,
+        sizes,
+        imageCount: [image1, image2, image3, image4].filter(Boolean).length
+      });
+
+      const response = await axios.post(
+        backendUrl + "/api/product/add", 
+        formData, 
+        {
+          headers: { 
+            token,
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      )
 
       if (response.data.success) {
-        toast.success(response.data.message)
-        setName('')
-        setDescription('')
-        setImage1(false)
-        setImage2(false)
-        setImage3(false)
-        setImage4(false)
-        setPrice('')
-        setSizes([])
-        setBestseller(false)
+        toast.success(response.data.message || 'Product added successfully!')
+        resetForm()
       } else {
-        toast.error(response.data.message)
+        toast.error(response.data.message || 'Failed to add product')
       }
 
     } catch (error) {
-      console.log('Add product error:', error);
+      console.error('Add product error:', error);
+      
       if (error.response) {
-        toast.error(error.response.data?.message || 'Failed to add product')
+        const errorMessage = error.response.data?.message || 'Failed to add product';
+        toast.error(errorMessage);
+        console.error('Server error:', errorMessage);
       } else if (error.request) {
-        toast.error('Network error. Please check your connection.')
+        toast.error('Network error. Please check your connection.');
+        console.error('Network error - no response received');
       } else {
-        toast.error(error.message || 'Failed to add product')
+        toast.error(error.message || 'Failed to add product');
+        console.error('Request setup error:', error.message);
       }
     } finally {
       setIsSubmitting(false)
